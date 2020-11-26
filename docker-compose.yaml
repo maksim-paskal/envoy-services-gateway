@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  envoy-gateway-hosting1:
+    image: envoyproxy/envoy:v1.15.2
+    ports:
+    - 18000:8000
+    - 18001:8001
+    volumes:
+    - ./ssl:/envoy/ssl
+    - ./envoy-gateway-hosting1.yaml:/envoy/envoy.yaml
+    command:
+    - /usr/local/bin/envoy
+    - --config-path /envoy/envoy.yaml
+    - --log-level warn
+    - --bootstrap-version 3
+    - --service-cluster test
+    - --service-node test1-id
+    - --service-zone hosting1
+  
+  envoy-gateway-hosting2:
+    image: envoyproxy/envoy:v1.15.2
+    ports:
+    - 28000:8000
+    - 28001:8001
+    volumes:
+    - ./ssl:/envoy/ssl
+    - ./envoy-gateway-hosting2.yaml:/envoy/envoy.yaml
+    command:
+    - /usr/local/bin/envoy
+    - --config-path /envoy/envoy.yaml
+    - --log-level warn
+    - --bootstrap-version 3
+    - --service-cluster test
+    - --service-node test1-id
+    - --service-zone hosting1

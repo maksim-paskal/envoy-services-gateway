@@ -1,0 +1,52 @@
+admin:
+  access_log_path: "/dev/null"
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 8001
+static_resources:
+  listeners:
+  - name: tcp_listener
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 8000
+    listener_filters:
+    - name: "envoy.filters.listener.tls_inspector"
+      typed_config: {}
+    filter_chains:
+    - filter_chain_match:
+        transport_protocol: tls
+        server_names:
+        - test-service.global
+      filters:
+      - name: envoy.filters.network.tcp_proxy
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+          stat_prefix: downstream_tcp_total
+          cluster: admin_cluster
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+          require_client_certificate: true
+          common_tls_context:
+            tls_certificates:
+            - certificate_chain: { "filename": "/envoy/ssl/server.crt" }
+              private_key: { "filename": "/envoy/ssl/server.key" }
+            validation_context:
+              trusted_ca: { "filename": "/envoy/ssl/ca.crt" }
+  clusters:
+  - name: admin_cluster
+    connect_timeout: 0.25s
+    lb_policy: ROUND_ROBIN
+    type: STATIC
+    load_assignment:
+      cluster_name: admin_cluster
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: 127.0.0.1
+                port_value: 8001

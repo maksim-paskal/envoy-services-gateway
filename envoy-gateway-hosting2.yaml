@@ -1,0 +1,44 @@
+admin:
+  access_log_path: "/dev/null"
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 8001
+static_resources:
+  listeners:
+  - name: tcp_listener
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 8000
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.tcp_proxy
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+          stat_prefix: tcp
+          cluster: hosting1_gateway
+  clusters:
+  - name: hosting1_gateway
+    connect_timeout: 0.25s
+    lb_policy: ROUND_ROBIN
+    type: STRICT_DNS
+    http2_protocol_options: {}
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+        sni: test-service.global
+        common_tls_context:
+          tls_certificates:
+            certificate_chain: { "filename": "/envoy/ssl/client01.crt" }
+            private_key: { "filename": "/envoy/ssl/client01.key" }
+    load_assignment:
+      cluster_name: hosting1_gateway
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: envoy-gateway-hosting1
+                port_value: 8000
